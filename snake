@@ -1,0 +1,99 @@
+import tkinter 
+import random
+
+ROWS = 25
+COLS = 25
+TILE_SIZE = 25
+
+WINDOW_WIDTH = TILE_SIZE * ROWS
+WINDOW_HEIGHT = TILE_SIZE * COLS
+
+class Tile:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y   
+
+# Game window
+window = tkinter.Tk()
+window.title("Snake")
+window.resizable(False, False)
+
+canvas = tkinter.Canvas(window, bg="black", width=WINDOW_WIDTH, height=WINDOW_HEIGHT, borderwidth=0, highlightthickness=0)
+canvas.pack()
+window.update()
+
+# Center the window
+window_width = window.winfo_width()
+window_height = window.winfo_height()
+screen_width = window.winfo_screenwidth()
+screen_height = window.winfo_screenheight()
+
+window_x = int((screen_width / 2) - (window_width / 2))
+window_y = int((screen_height / 2) - (window_height / 2))
+# format "(w)x(h)+(x)+(y)"
+window.geometry(f"{window_width}x{window_height}+{window_x}+{window_y}")
+
+# Initialize game
+snake = [Tile(5 * TILE_SIZE, 5 * TILE_SIZE)]  # List of tiles representing the snake
+food = Tile(10 * TILE_SIZE, 10 * TILE_SIZE)
+velocityX = 0
+velocityY = 0
+
+def draw():
+    global snake, food, velocityX, velocityY
+
+    canvas.delete("all")
+
+    # Move snake
+    new_head = Tile(snake[0].x + velocityX, snake[0].y + velocityY)
+    snake.insert(0, new_head)
+    
+    # Check for collision with food
+    if snake[0].x == food.x and snake[0].y == food.y:
+        food = Tile(random.randint(0, ROWS-1) * TILE_SIZE, random.randint(0, COLS-1) * TILE_SIZE)
+    else:
+        snake.pop()
+    
+    # Check for collision with walls
+    if snake[0].x < 0 or snake[0].x >= WINDOW_WIDTH or snake[0].y < 0 or snake[0].y >= WINDOW_HEIGHT:
+        game_over()
+        return
+
+    # Check for collision with itself
+    for segment in snake[1:]:
+        if snake[0].x == segment.x and snake[0].y == segment.y:
+            game_over()
+            return
+
+    # Draw snake
+    for segment in snake:
+        canvas.create_rectangle(segment.x, segment.y, segment.x + TILE_SIZE, segment.y + TILE_SIZE, fill="green")
+    
+    # Draw food
+    canvas.create_rectangle(food.x, food.y, food.x + TILE_SIZE, food.y + TILE_SIZE, fill="white")
+
+    window.after(100, draw)  # 100ms = 1/10 second
+
+def game_over():
+    canvas.create_text(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2, text="Game Over", fill="white", font=("Arial", 24))
+    window.update()
+
+def change_direction(event):
+    global velocityX, velocityY
+    if event.keysym == "Up" and velocityY == 0:
+        velocityX = 0
+        velocityY = -TILE_SIZE
+    elif event.keysym == "Down" and velocityY == 0:
+        velocityX = 0
+        velocityY = TILE_SIZE
+    elif event.keysym == "Left" and velocityX == 0:
+        velocityX = -TILE_SIZE
+        velocityY = 0
+    elif event.keysym == "Right" and velocityX == 0:
+        velocityX = TILE_SIZE
+        velocityY = 0
+window.bind("<KeyPress>", change_direction)
+
+# Start the game loop
+draw()
+window.mainloop()
